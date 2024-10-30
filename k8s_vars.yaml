@@ -1,0 +1,42 @@
+kube_repo_content: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /"
+docker_repo_content: "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker-apt-keyring.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable"
+
+
+
+
+
+
+
+admin_pkges:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gpg
+
+pkges:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+  - kubelet
+  - kubeadm
+  - kubectl
+
+services:
+  - docker
+  - kubelet
+  - containerd
+
+ports:
+  master:
+    - 6443
+    - 2379-2380
+    - 10250
+    - 10259
+    - 10257
+
+  worker:
+    - 6443
+    - 10250
+    - 10256
