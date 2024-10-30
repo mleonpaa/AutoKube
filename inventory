@@ -1,0 +1,12 @@
+[k8snodes:children]
+mnodes
+wknodes
+
+[mnodes]
+admin ansible_host=localhost ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/test01-key.pem
+master02 ansible_host=ec2-15-188-3-43.eu-west-3.compute.amazonaws.com ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/test01-key.pem
+master03 ansible_host=ec2-52-47-166-127.eu-west-3.compute.amazonaws.com ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/test01-key.pem
+
+[wknodes]
+worker01 ansible_host=ec2-13-38-217-17.eu-west-3.compute.amazonaws.com ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/test01-key.pem
+worker02 ansible_host=ec2-35-180-186-29.eu-west-3.compute.amazonaws.com ansible_user=ubuntu ansible_ssh_private_key_file=/home/ubuntu/test01-key.pem
