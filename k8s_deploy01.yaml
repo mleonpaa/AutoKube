@@ -92,6 +92,12 @@
     - name: Generate default containerd config file
       shell: containerd config default > /etc/containerd/config.toml
 
+    - name: Set systemd as cgroup driver
+      lineinfile:
+        path: "/etc/containerd/config.tomol"
+        regex: "SystemdCgroup = false"
+        line: "SystemdCgroup = true"
+
     - name: Enable services
       systemd_service:
         name: "{{ item }}"
