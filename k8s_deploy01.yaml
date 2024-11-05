@@ -94,9 +94,9 @@
 
     - name: Set systemd as cgroup driver
       lineinfile:
-        path: "/etc/containerd/config.tomol"
+        path: "/etc/containerd/config.toml"
         regex: "SystemdCgroup = false"
-        line: "SystemdCgroup = true"
+        line: "            SystemdCgroup = true"
 
     - name: Enable services
       systemd_service:
