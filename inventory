@@ -9,9 +9,9 @@ ansible_ssh_extra_args='-o StrictHostKeyChecking=no'
 
 [mnodes]
 admin ansible_host=localhost
-master02 ansible_host=ec2-15-237-160-91.eu-west-3.compute.amazonaws.com
-master03 ansible_host=ec2-13-36-211-101.eu-west-3.compute.amazonaws.com
+master02 ansible_host=10.0.1.102
+master03 ansible_host=10.0.1.103
 
 [wknodes]
-worker01 ansible_host=ec2-13-39-84-21.eu-west-3.compute.amazonaws.com
-worker02 ansible_host=ec2-13-39-19-158.eu-west-3.compute.amazonaws.com
+worker01 ansible_host=10.0.1.111
+worker02 ansible_host=10.0.1.112
