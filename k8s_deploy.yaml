@@ -11,11 +11,15 @@
       file:
         path: "/home/{{ ansible_user }}/.kube"
         state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
 
     - name: Create temporary file directory
       file:
         path: "/tmp/AutoKube"
         state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
 
     - name: Install required packages
       apt:
@@ -125,8 +129,9 @@
 
     - name: Establecer paquetes en hold
       dpkg_selections:
-        name: "{{ pkges.kubernetes }}"
+        name: "{{ item }}"
         selection: hold
+      loop: "{{ pkges.kubernetes }}"
 
     - name: Generate default containerd config file
       shell: containerd config default > /etc/containerd/config.toml
@@ -181,11 +186,12 @@
             group: "{{ ansible_user }}"
 
         - name: Copy admin.conf file to administrator
-          copy:
+          fetch:
             src: "/etc/kubernetes/admin.conf"
             dest: ".kube/config"
+            flat: true
         
-        - name: Copy kube-join.sh file to Admin
+        - name: Copy kube-join.sh file to administrator
           fetch:
             src: "{{ k8s_working_dir }}/AutoKube/kube-join.sh"
             dest: "/tmp/AutoKube/"
