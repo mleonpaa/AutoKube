@@ -253,6 +253,3 @@
           command: "{{ k8s_working_dir }}/AutoKube/kube-join.sh"
 
       when: kube_join_check.stat.exists == true
-        enabled: true
-        state: restarted
-      loop: "{{ services }}"
