@@ -1,0 +1,258 @@
+---
+    
+- name: Set administrator environment
+  hosts: control
+  become: true
+  vars_files:
+    - k8s_vars.yaml
+    
+  tasks:
+    - name: Set .kube directory
+      file:
+        path: "/home/{{ ansible_user }}/.kube"
+        state: directory
+
+    - name: Create temporary file directory
+      file:
+        path: "/tmp/AutoKube"
+        state: directory
+
+    - name: Install required packages
+      apt:
+        name: "{{ admin_pkges }}"
+        state: latest
+        update_cache: true
+
+    - name: Check if Kubernetes GPG keys already exists
+      stat:
+        path: "/etc/apt/keyrings/kubernetes-apt-keyring.gpg"
+      register: kube_gpg_check
+
+    - name: Download the public signing key for the Kubernetes package repositories
+      shell: "curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
+      when: kube_gpg_check.stat.exists == false
+
+    - name: Check if Kubernetes repository exists
+      stat:
+        path: "/etc/apt/sources.list.d/kubernetes.list"
+      register: kube_repo_check
+
+    - name: Add Kubernetes Repository
+      lineinfile:
+        path: "/etc/apt/sources.list.d/kubernetes.list"
+        line: "{{ kube_repo_content }}"
+        create: true
+      when: kube_repo_check
+
+    - name: Install Kubectl
+      apt:
+        name: "kubectl"
+        state: latest
+        update_cache: true
+
+  
+- name: Set up Deployment Environmet
+  hosts: k8snodes
+  become: true
+  vars_files:
+    - k8s_vars.yaml
+    
+  tasks:
+    - name: Disable swap
+      command: swapoff -a
+
+    - name: Modify /etc/fstab file
+      command: sed -i.bak '/swap/s/^\//#\//' /etc/fstab
+
+    - name: Install required packages
+      apt:
+        name: "{{ admin_pkges }}"
+        state: latest
+        update_cache: true
+
+    - name: Check if Docker and Kubernetes GPG keys already exists
+      stat:
+        path: "/etc/apt/keyrings/{{ item }}-apt-keyring.gpg"
+      register: gpg_check
+      loop:
+        - kubernetes
+        - docker
+
+    - name: Download the public signing key for the Kubernetes package repositories
+      shell: "curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/{{ item.item }}-apt-keyring.gpg"
+      when:
+        - item.item == "kubernetes"
+        - item.stat.exists == false
+      loop: "{{ gpg_check.results }}"
+
+    - name: Download the public signing key for the Docker package repositories
+      shell: "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/{{ item.item }}-apt-keyring.gpg"
+      when:
+        - item.item == "docker"
+        - item.stat.exists == false
+      loop: "{{ gpg_check.results }}"
+
+    - name: Check if Kubernetes and Docker repositories exists
+      stat:
+        path: "/etc/apt/sources.list.d/{{ item }}.list"
+      register: repo_check
+      loop:
+        - kubernetes
+        - docker
+
+    - name: Add Kubernetes Repository
+      lineinfile:
+        path: "/etc/apt/sources.list.d/kubernetes.list"
+        line: "{{ kube_repo_content }}"
+        create: true
+      when:
+        - item.item == "kubernetes"
+        - item.stat.exists == false
+      loop: "{{ repo_check.results }}"
+
+    - name: Add Docker Repository
+      shell: "echo {{ docker_repo_content }} > /etc/apt/sources.list.d/docker.list"
+      when:
+        - item.item == "docker"
+        - item.stat.exists == false
+      loop: "{{ repo_check.results }}"    
+
+    - name: Install Kubernetes and Docker packages
+      apt:
+        name: "{{ pkges.docker + pkges.kubernetes }}"
+        state: latest
+        update_cache: true
+
+    - name: Establecer paquetes en hold
+      dpkg_selections:
+        name: "{{ pkges.kubernetes }}"
+        selection: hold
+
+    - name: Generate default containerd config file
+      shell: containerd config default > /etc/containerd/config.toml
+
+    - name: Set systemd as cgroup driver
+      lineinfile:
+        path: "/etc/containerd/config.toml"
+        regex: "SystemdCgroup = false"
+        line: "            SystemdCgroup = true"
+
+    - name: Enable services
+      systemd_service:
+        name: "{{ item }}"
+        enabled: true
+        state: restarted
+      loop: "{{ services }}"
+    
+    - name: Create AutoKube repository
+      file:
+        path: "{{ k8s_working_dir }}/AutoKube"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user}}"
+
+
+- name: Deploy cluster on Master Node
+  hosts: admin
+  become: true
+  vars:
+    bin_bash: '#!/bin/bash'
+  vars_files:
+    - k8s_vars.yaml
+    
+  tasks:
+    - name: Kubeadm block
+      block:
+        - name: Initialize cluster & create join script
+          shell: "{ echo {{ bin_bash | quote }}; sudo kubeadm init --control-plane-endpoint {{ control_plane_end_point }} --upload-certs | grep -e {{ search.one | quote }} -e {{ search.two }} -e {{ search.three }} | head -n 3; } > {{ k8s_working_dir }}/AutoKube/kube-join.sh"
+          register: kubeadm_check
+
+      rescue:
+        - name: Print error message
+          debug:
+            msg: "Something went wrong"
+
+    - name: Set admin environment
+      block:
+        - name: Change admin.conf owner
+          file:
+            path: "/etc/kubernetes/admin.conf"
+            owner: "{{ ansible_user }}"
+            group: "{{ ansible_user }}"
+
+        - name: Copy admin.conf file to administrator
+          copy:
+            src: "/etc/kubernetes/admin.conf"
+            dest: ".kube/config"
+        
+        - name: Copy kube-join.sh file to Admin
+          fetch:
+            src: "{{ k8s_working_dir }}/AutoKube/kube-join.sh"
+            dest: "/tmp/AutoKube/"
+            flat: true
+            
+      when: kubeadm_check.changed == true
+
+
+- name: Add master nodes to the cluster
+  hosts: managed
+  become: true
+  vars_files:
+    - k8s_vars.yaml
+  
+  tasks:
+    - name: Check if kube-join.sh file already exists.
+      stat:
+        path: "/tmp/AutoKube/kube-join.sh"
+      delegate_to: localhost
+      register: kube_join_check
+
+    - name: Join Cluster.
+      block:
+        - name: Copy kube-join.sh on worker nodes.
+          copy:
+            src: "/tmp/AutoKube/kube-join.sh"
+            dest: "{{ k8s_working_dir }}/AutoKube/"
+            mode: 0700
+
+        - name: Join cluster
+          command: "{{ k8s_working_dir }}/AutoKube/kube-join.sh"
+
+      when: kube_join_check.stat.exists == true
+
+
+- name: Add worker nodes to the cluster
+  hosts: wknodes
+  become: true
+  vars_files:
+    - k8s_vars.yaml
+  
+  tasks:
+    - name: Check if kube-join.sh file already exists.
+      stat:
+        path: "/tmp/AutoKube/kube-join.sh"
+      delegate_to: localhost
+      register: kube_join_check
+
+    - name: Join Cluster.
+      block:
+        - name: Copy kube-join.sh on worker nodes.
+          copy:
+            src: "/tmp/AutoKube/kube-join.sh"
+            dest: "{{ k8s_working_dir }}/AutoKube/"
+            mode: 0700
+
+        - name: Remove Control plane line in file
+          lineinfile:
+            path: "{{ k8s_working_dir }}/AutoKube/kube-join.sh"
+            search_string: "control-plane"
+            state: absent
+            
+
+        - name: Join cluster
+          command: "{{ k8s_working_dir }}/AutoKube/kube-join.sh"
+
+      when: kube_join_check.stat.exists == true
+        enabled: true
+        state: restarted
+      loop: "{{ services }}"
