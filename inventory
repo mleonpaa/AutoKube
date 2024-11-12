@@ -14,10 +14,12 @@ admin
 managed
 
 [admin]
-master01 ansible_host=10.0.1.101
+master01 ansible_host=10.0.2.101
 
 [managed]
-master02 ansible_host=10.0.1.102
+master02 ansible_host=10.0.2.102
+master03 ansible_host=10.0.2.103
 
 [wknodes]
-worker01 ansible_host=10.0.1.111
+worker01 ansible_host=10.0.2.111
+worker02 ansible_host=10.0.2.112
