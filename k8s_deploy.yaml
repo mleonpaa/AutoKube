@@ -191,11 +191,11 @@
 
     - name: Set admin environment
       block:
-        - name: Change admin.conf owner
-          file:
-            path: "/etc/kubernetes/admin.conf"
-            owner: "{{ ansible_user }}"
-            group: "{{ ansible_user }}"
+        #- name: Change admin.conf owner
+        #  file:
+        #    path: "/etc/kubernetes/admin.conf"
+        #    owner: "{{ ansible_user }}"
+        #    group: "{{ ansible_user }}"
 
         - name: Copy admin.conf file to administrator
           fetch:
