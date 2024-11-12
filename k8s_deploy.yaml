@@ -9,7 +9,7 @@
   tasks:
     - name: Set .kube directory
       file:
-        path: "/home/{{ ansible_user }}/.kube"
+        path: "{{ k8s_working_dir }}/.kube"
         state: directory
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
@@ -200,7 +200,7 @@
         - name: Copy admin.conf file to administrator
           fetch:
             src: "/etc/kubernetes/admin.conf"
-            dest: ".kube/config"
+            dest: "{{ k8s_working_dir }}/.kube/config"
             flat: true
         
         - name: Copy kube-join.sh file to administrator
