@@ -166,6 +166,18 @@
     - k8s_vars.yaml
     
   tasks:
+    - name: Check if kube-join.sh file already exists.
+      stat:
+        path: "/tmp/AutoKube/kube-join.sh"
+      register: kube_join_check
+    
+    - name: Change kube-join.sh file permisions
+      file:
+        path: "/etc/kubernetes/admin.conf"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+      when: kube_join_check.stat.exists == true
+        
     - name: Kubeadm block
       block:
         - name: Initialize cluster & create join script
