@@ -1,11 +1,14 @@
+
 kube_repo_content: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /"
 docker_repo_content: "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker-apt-keyring.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable"
 
+k8s_working_dir: "/home/{{ ansible_user }}"
+control_plane_end_point: "10.0.1.120:6443"
 
-
-
-
-
+search:
+  one: kubeadm join
+  two: discovery-token
+  three: --control-plane
 
 admin_pkges:
   - apt-transport-https
@@ -14,14 +17,16 @@ admin_pkges:
   - gpg
 
 pkges:
-  - docker-ce
-  - docker-ce-cli
-  - containerd.io
-  - docker-buildx-plugin
-  - docker-compose-plugin
-  - kubelet
-  - kubeadm
-  - kubectl
+  docker: 
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    - docker-buildx-plugin
+    - docker-compose-plugin
+  kubernetes:
+    - kubelet
+    - kubeadm
+    - kubectl
 
 services:
   - docker
