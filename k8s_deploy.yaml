@@ -273,7 +273,7 @@
       when: kube_join_check.stat.exists == true
 
 
-- name: Set CNI (Default: Calico)
+- name: Set CNI 
   hosts: control
   vars_files:
     - k8s_vars.yaml
