@@ -45,3 +45,5 @@ ports:
     - 6443
     - 10250
     - 10256
+
+cni_url: "https://docs.projectcalico.org/manifests/calico.yaml"
