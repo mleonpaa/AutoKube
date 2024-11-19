@@ -305,9 +305,9 @@
     - name: Set Pods network
       command: "kubectl apply -f {{ cni_url }}"
 
-    - name: Change server url
+    - name: Set cluster access point to public DNS
       lineinfile:
         path: "{{ k8s_working_dir }}/.kube/config"
         search_string: "server"
-        line: "    server: https://{{ lb_address_pub }}:6443
+        line: "    server: https://{{ lb_address_pub }}:6443"
         
