@@ -305,7 +305,7 @@
     - name: Set Pods network
       command: "kubectl apply -f {{ cni_url }}"
 
-    - name: Remove Control plane line in file
+    - name: Change server url
       lineinfile:
         path: "{{ k8s_working_dir }}/.kube/config"
         search_string: "server"
