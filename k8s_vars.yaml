@@ -4,6 +4,7 @@ docker_repo_content: "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/
 
 k8s_working_dir: "/home/{{ ansible_user }}"
 control_plane_end_point: "10.0.1.120:6443"
+lb_address_pub: ""
 
 search:
   one: kubeadm join
