@@ -201,7 +201,7 @@
     - name: Kubeadm block
       block:
         - name: Initialize cluster & create join script
-          shell: "{ echo {{ bin_bash | quote }}; sudo kubeadm init --apiserver-advertise-address {{ lb_address_pub }} --apiserver-cert-extra-sans {{ lb_address_pub }} --control-plane-endpoint {{ control_plane_end_point }} --upload-certs | grep -e {{ search.one | quote }} -e {{ search.two }} -e {{ search.three }} | head -n 3; } > {{ k8s_working_dir }}/AutoKube/kube-join.sh"
+          shell: "{ echo {{ bin_bash | quote }}; sudo kubeadm init --apiserver-cert-extra-sans {{ lb_address_pub }} --control-plane-endpoint {{ control_plane_end_point }} --upload-certs | grep -e {{ search.one | quote }} -e {{ search.two }} -e {{ search.three }} | head -n 3; } > {{ k8s_working_dir }}/AutoKube/kube-join.sh"
           register: kubeadm_check
 
       rescue:
@@ -295,7 +295,7 @@
       when: kube_join_check.stat.exists == true
 
 
-- name: Set CNI 
+- name: Final Steps
   hosts: control
   vars_files:
     - k8s_vars.yaml
@@ -304,3 +304,10 @@
   tasks:
     - name: Set Pods network
       command: "kubectl apply -f {{ cni_url }}"
+
+    - name: Remove Control plane line in file
+      lineinfile:
+        path: "{{ k8s_working_dir }}/.kube/config"
+        search_string: "server"
+        line: "https://{{ lb_address_pub }}:6443
+        
