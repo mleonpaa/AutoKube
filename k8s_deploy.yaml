@@ -309,5 +309,5 @@
       lineinfile:
         path: "{{ k8s_working_dir }}/.kube/config"
         search_string: "server"
-        line: "https://{{ lb_address_pub }}:6443
+        line: "    server: https://{{ lb_address_pub }}:6443
         
