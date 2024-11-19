@@ -27,6 +27,23 @@
         state: latest
         update_cache: true
 
+    - name: Install HAproxy
+      apt:
+        name: "haproxy"
+        state: latest
+        update_cache: true
+
+    - name: Configure HAproxy
+      copy:
+        src: "/home/{{ ansible_user }}/AutoKube/haproxy.cfg"
+        dest: "/etc/haproxy/"
+
+    - name: Restart HAproxy service
+      systemd_service:
+        name: "haproxy"
+        enabled: true
+        state: restarted
+
     - name: Check if Kubernetes GPG keys already exists
       stat:
         path: "/etc/apt/keyrings/kubernetes-apt-keyring.gpg"
