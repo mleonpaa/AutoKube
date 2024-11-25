@@ -5,7 +5,7 @@
   become: true
   vars_files:
     - k8s_vars.yaml
-    - k8s_dinamic_vars.yaml
+    - k8s_dinamic_vars.json
     
   tasks:
     - name: Set .kube directory
@@ -78,7 +78,7 @@
   become: true
   vars_files:
     - k8s_vars.yaml
-    - k8s_dinamic_vars.yaml
+    - k8s_dinamic_vars.json
     
   tasks:
     - name: Disable swap
@@ -183,7 +183,7 @@
     bin_bash: '#!/bin/bash'
   vars_files:
     - k8s_vars.yaml
-    - k8s_dinamic_vars.yaml
+    - k8s_dinamic_vars.json
     
   tasks:
     - name: Check if kube-join.sh file already exists.
@@ -237,7 +237,7 @@
   become: true
   vars_files:
     - k8s_vars.yaml
-    - k8s_dinamic_vars.yaml
+    - k8s_dinamic_vars.json
   
   tasks:
     - name: Check if kube-join.sh file already exists.
@@ -265,7 +265,7 @@
   become: true
   vars_files:
     - k8s_vars.yaml
-    - k8s_dinamic_vars.yaml
+    - k8s_dinamic_vars.json
   
   tasks:
     - name: Check if kube-join.sh file already exists.
@@ -299,7 +299,7 @@
   hosts: control
   vars_files:
     - k8s_vars.yaml
-    - k8s_dinamic_vars.yaml
+    - k8s_dinamic_vars.json
     
   tasks:
     - name: Set Pods network
