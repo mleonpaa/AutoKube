@@ -1,0 +1,25 @@
+frontend kservice
+    bind *:6443
+    mode tcp
+    default_backend webservers
+
+backend webservers
+    mode tcp
+    balance leastconn
+    {% for host in groups['mnodes'] %}
+    server {{ host }} {{ hostvars[host]['ansible_host'] }}:6443 check
+    {% endfor %}
+
+
+listen stats
+    bind *:8080
+    mode http
+    stats enable
+    stats uri /stats
+    stats refresh 1s
+
+defaults
+    log global
+    mode tcp
+    option tcplog
+    option dontlognull
