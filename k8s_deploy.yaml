@@ -35,9 +35,9 @@
         update_cache: true
 
     - name: Configure HAproxy
-      copy:
-        src: "/home/{{ ansible_user }}/AutoKube/haproxy.cfg"
-        dest: "/etc/haproxy/"
+      template:
+        src: haproxy.cfg.j2
+        dest: /etc/haproxy/haproxy.cfg
 
     - name: Restart HAproxy service
       systemd_service:
