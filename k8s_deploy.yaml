@@ -261,7 +261,7 @@
 
         - name: Store Join output
           copy: 
-            content: "{{ master_join_output.[inventory_host_name].stdout }}"
+            content: "{{ master_join_output.[inventory_hostname].stdout }}"
             dest: "{{ k8s_working_dir }}/AutoKube/.log/kubeadm.log"
 
       when: kube_join_check.stat.exists == true
@@ -302,7 +302,7 @@
 
         - name: Store Join output
           copy: 
-            content: "{{ worker_join_output.[inventory_host_name].stdout }}"
+            content: "{{ worker_join_output.[inventory_hostname].stdout }}"
             dest: "{{ k8s_working_dir }}/AutoKube/.log/kubeadm.log"
 
       when: kube_join_check.stat.exists == true
