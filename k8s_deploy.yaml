@@ -201,7 +201,7 @@
     - name: Kubeadm block
       block:
         - name: Initialize cluster & create join script
-          shell: "{ echo {{ bin_bash | quote }}; sudo kubeadm init --apiserver-cert-extra-sans {{ lb_address_pub }} --control-plane-endpoint {{ control_plane_end_point }} --upload-certs | grep -e {{ search.one | quote }} -e {{ search.two }} -e {{ search.three }} | head -n 3; } > {{ k8s_working_dir }}/AutoKube/kube-join.sh"
+          shell: "{ echo {{ bin_bash | quote }}; sudo kubeadm init --apiserver-cert-extra-sans {{ lb_address_pub }} --control-plane-endpoint {{ control_plane_end_point }} --upload-certs | tee .log/kubectl.log | grep -e {{ search.one | quote }} -e {{ search.two }} -e {{ search.three }} | head -n 3; } > {{ k8s_working_dir }}/AutoKube/kube-join.sh"
           register: kubeadm_check
 
       rescue:
@@ -211,12 +211,6 @@
 
     - name: Set admin environment
       block:
-        #- name: Change admin.conf owner
-        #  file:
-        #    path: "/etc/kubernetes/admin.conf"
-        #    owner: "{{ ansible_user }}"
-        #    group: "{{ ansible_user }}"
-
         - name: Copy admin.conf file to administrator
           fetch:
             src: "/etc/kubernetes/admin.conf"
