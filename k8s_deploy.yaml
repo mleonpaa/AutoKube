@@ -256,13 +256,7 @@
             mode: 0700
 
         - name: Join cluster
-          command: "{{ k8s_working_dir }}/AutoKube/kube-join.sh"
-          register: master_join_output
-
-        - name: Store Join output
-          copy: 
-            content: "{{ master_join_output.stdout }}"
-            dest: "{{ k8s_working_dir }}/AutoKube/.log/kubeadm.log"
+          command: "{{ k8s_working_dir }}/AutoKube/kube-join.sh >> {{ k8s_working_dir }}/AutoKube/.log/kubeadm.log 2>&1"
 
       when: kube_join_check.stat.exists == true
 
@@ -297,14 +291,8 @@
             
 
         - name: Join cluster
-          command: "{{ k8s_working_dir }}/AutoKube/kube-join.sh"
-          register: worker_join_output
-
-        - name: Store Join output
-          copy: 
-            content: "{{ worker_join_output.stdout }}"
-            dest: "{{ k8s_working_dir }}/AutoKube/.log/kubeadm.log"
-
+          command: "{{ k8s_working_dir }}/AutoKube/kube-join.sh >> {{ k8s_working_dir }}/AutoKube/.log/kubeadm.log 2>&1"
+          
       when: kube_join_check.stat.exists == true
 
 
