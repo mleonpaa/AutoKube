@@ -51,7 +51,7 @@
       register: kube_gpg_check
 
     - name: Download the public signing key for the Kubernetes package repositories
-      shell: "curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
+      shell: "curl -fsSL https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version }}/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
       when: kube_gpg_check.stat.exists == false
 
     - name: Check if Kubernetes repository exists
@@ -102,7 +102,7 @@
         - docker
 
     - name: Download the public signing key for the Kubernetes package repositories
-      shell: "curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/{{ item.item }}-apt-keyring.gpg"
+      shell: "curl -fsSL https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version }}/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/{{ item.item }}-apt-keyring.gpg"
       when:
         - item.item == "kubernetes"
         - item.stat.exists == false
