@@ -146,7 +146,7 @@
         state: latest
         update_cache: true
 
-    - name: Establecer paquetes en hold
+    - name: Stablish Kubernetes packages in hold
       dpkg_selections:
         name: "{{ item }}"
         selection: hold
