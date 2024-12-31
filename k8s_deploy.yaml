@@ -214,6 +214,12 @@
           shell: "{ echo {{ bin_bash | quote }}; sudo kubeadm init --apiserver-cert-extra-sans {{ lb_address_pub }} --control-plane-endpoint {{ control_plane_end_point }} --upload-certs 2>&1 | tee {{ k8s_working_dir }}/AutoKube/.log/kubeadm.log | grep -e {{ search.one | quote }} -e {{ search.two }} -e {{ search.three }} | head -n 3; } > {{ k8s_working_dir }}/AutoKube/kube-join.sh"
           register: kubeadm_check
 
+        - name: Set cluster access point to public DNS
+          lineinfile:
+            path: "/etc/kubernetes/admin.conf"
+            search_string: "server"
+            line: "    server: https://{{ lb_address_pub }}:6443"
+
         - name: Copy admin.conf file to administrator
           fetch:
             src: "/etc/kubernetes/admin.conf"
@@ -315,19 +321,33 @@
       when: kube_join_check.stat.exists == false and ansible_facts.services["kubelet.service"].state == "stopped"
       
 
-# - name: Final Steps
-#   hosts: control
-#   vars_files:
-#     - k8s_vars.yaml
-#     - k8s_dinamic_vars.json
+ - name: Final Steps
+   hosts: control
+   vars_files:
+     - k8s_vars.yaml
+     - k8s_dinamic_vars.json
     
-#   tasks:
-#     - name: Set Pods network
-#       command: "kubectl apply -f {{ cni_url }}"
+   tasks:
+     - name: Set Pods network
+       command: "kubectl apply -f {{ cni_url }}"
 
-#     - name: Set cluster access point to public DNS
-#       lineinfile:
-#         path: "{{ k8s_working_dir }}/.kube/config"
-#         search_string: "server"
-#         line: "    server: https://{{ lb_address_pub }}:6443"
+    - name: Curl Helm binary tar
+      get_url:
+        url: "https://get.helm.sh/helm-v3.16.4-linux-arm64.tar.gz"
+        dest: "{{ k8s_working_dir }}/helm-v3.16.4.tar.gz"
+
+    - name: Unarchive Helm tar
+      ansible.builtin.unarchive:
+        src: "{{ k8s_working_dir }}/helm-v3.16.4.tar.gz"
+        dest: "{{ k8s_working_dir }}/helm_dir"
+
+    - name: Move binary to PATH
+      copy:
+        src: "/ruta/origen/archivo.txt"
+        dest: "/ruta/destino/archivo.txt"
+        force: yes
+      become: True
+    
+
+    
         
