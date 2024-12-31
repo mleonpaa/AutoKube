@@ -198,6 +198,9 @@
         path: "/tmp/AutoKube/kube-join.sh"
       register: kube_join_check
     
+    - name: Check if kubelet is running.
+      service_facts: 
+    
     - name: Change kube-join.sh file permisions
       file:
         path: "/etc/kubernetes/admin.conf"
@@ -211,13 +214,6 @@
           shell: "{ echo {{ bin_bash | quote }}; sudo kubeadm init --apiserver-cert-extra-sans {{ lb_address_pub }} --control-plane-endpoint {{ control_plane_end_point }} --upload-certs 2>&1 | tee {{ k8s_working_dir }}/AutoKube/.log/kubeadm.log | grep -e {{ search.one | quote }} -e {{ search.two }} -e {{ search.three }} | head -n 3; } > {{ k8s_working_dir }}/AutoKube/kube-join.sh"
           register: kubeadm_check
 
-      rescue:
-        - name: Print error message
-          debug:
-            msg: "Something went wrong"
-
-    - name: Set admin environment
-      block:
         - name: Copy admin.conf file to administrator
           fetch:
             src: "/etc/kubernetes/admin.conf"
@@ -230,7 +226,7 @@
             dest: "/tmp/AutoKube/"
             flat: true
             
-      when: kubeadm_check.changed == true
+      when: kube_join_check.stat.exists == false and ansible_facts.services["kubelet.service"].state == "stopped"
 
 
 - name: Add master nodes to the cluster
@@ -244,21 +240,33 @@
     - name: Check if kube-join.sh file already exists.
       stat:
         path: "/tmp/AutoKube/kube-join.sh"
-      delegate_to: localhost
       register: kube_join_check
+    
+    - name: Check if kubelet is running.
+      service_facts: 
 
-    - name: Join Cluster.
+    - name: Execution block
       block:
-        - name: Copy kube-join.sh on worker nodes.
-          copy:
-            src: "/tmp/AutoKube/kube-join.sh"
-            dest: "{{ k8s_working_dir }}/AutoKube/"
-            mode: 0700
+        - name: Check if kube-join.sh file already exists.
+          stat:
+            path: "/tmp/AutoKube/kube-join.sh"
+          delegate_to: localhost
+          register: kube_join_adm_check
 
-        - name: Join cluster
-          command: "{{ k8s_working_dir }}/AutoKube/kube-join.sh >> {{ k8s_working_dir }}/AutoKube/.log/kubeadm.log 2>&1"
+        - name: Join Cluster.
+          block:
+            - name: Copy kube-join.sh on worker nodes.
+              copy:
+                src: "/tmp/AutoKube/kube-join.sh"
+                dest: "{{ k8s_working_dir }}/AutoKube/"
+                mode: 0700
 
-      when: kube_join_check.stat.exists == true
+            - name: Join cluster
+              command: "{{ k8s_working_dir }}/AutoKube/kube-join.sh >> {{ k8s_working_dir }}/AutoKube/.log/kubeadm.log 2>&1"
+
+          when: kube_join_adm_check.stat.exists == true
+
+      when: kube_join_check.stat.exists == false and ansible_facts.services["kubelet.service"].state == "stopped"
 
 
 - name: Add worker nodes to the cluster
@@ -272,43 +280,54 @@
     - name: Check if kube-join.sh file already exists.
       stat:
         path: "/tmp/AutoKube/kube-join.sh"
-      delegate_to: localhost
       register: kube_join_check
-
-    - name: Join Cluster.
-      block:
-        - name: Copy kube-join.sh on worker nodes.
-          copy:
-            src: "/tmp/AutoKube/kube-join.sh"
-            dest: "{{ k8s_working_dir }}/AutoKube/"
-            mode: 0700
-
-        - name: Remove Control plane line in file
-          lineinfile:
-            path: "{{ k8s_working_dir }}/AutoKube/kube-join.sh"
-            search_string: "control-plane"
-            state: absent
-            
-
-        - name: Join cluster
-          command: "{{ k8s_working_dir }}/AutoKube/kube-join.sh >> {{ k8s_working_dir }}/AutoKube/.log/kubeadm.log 2>&1"
-          
-      when: kube_join_check.stat.exists == true
-
-
-- name: Final Steps
-  hosts: control
-  vars_files:
-    - k8s_vars.yaml
-    - k8s_dinamic_vars.json
     
-  tasks:
-    - name: Set Pods network
-      command: "kubectl apply -f {{ cni_url }}"
+    - name: Check if kubelet is running.
+      service_facts: 
+    
+    - name: Execution block
+      block:
+        - name: Check if kube-join.sh file already exists.
+          stat:
+            path: "/tmp/AutoKube/kube-join.sh"
+          delegate_to: localhost
+          register: kube_join_adm_check
 
-    - name: Set cluster access point to public DNS
-      lineinfile:
-        path: "{{ k8s_working_dir }}/.kube/config"
-        search_string: "server"
-        line: "    server: https://{{ lb_address_pub }}:6443"
+        - name: Join Cluster.
+          block:
+            - name: Copy kube-join.sh on worker nodes.
+              copy:
+                src: "/tmp/AutoKube/kube-join.sh"
+                dest: "{{ k8s_working_dir }}/AutoKube/"
+                mode: 0700
+
+            - name: Remove Control plane line in file
+              lineinfile:
+                path: "{{ k8s_working_dir }}/AutoKube/kube-join.sh"
+                search_string: "control-plane"
+                state: absent
+
+            - name: Join cluster
+              command: "{{ k8s_working_dir }}/AutoKube/kube-join.sh >> {{ k8s_working_dir }}/AutoKube/.log/kubeadm.log 2>&1"
+          
+          when: kube_join_adm_check.stat.exists == true
+
+      when: kube_join_check.stat.exists == false and ansible_facts.services["kubelet.service"].state == "stopped"
+      
+
+# - name: Final Steps
+#   hosts: control
+#   vars_files:
+#     - k8s_vars.yaml
+#     - k8s_dinamic_vars.json
+    
+#   tasks:
+#     - name: Set Pods network
+#       command: "kubectl apply -f {{ cni_url }}"
+
+#     - name: Set cluster access point to public DNS
+#       lineinfile:
+#         path: "{{ k8s_working_dir }}/.kube/config"
+#         search_string: "server"
+#         line: "    server: https://{{ lb_address_pub }}:6443"
         
