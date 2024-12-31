@@ -331,22 +331,22 @@
      - name: Set Pods network
        command: "kubectl apply -f {{ cni_url }}"
 
-    - name: Curl Helm binary tar
-      get_url:
-        url: "https://get.helm.sh/helm-v3.16.4-linux-arm64.tar.gz"
-        dest: "{{ k8s_working_dir }}/helm-v3.16.4.tar.gz"
+     - name: Curl Helm binary tar
+       get_url:
+         url: "https://get.helm.sh/helm-v3.16.4-linux-arm64.tar.gz"
+         dest: "{{ k8s_working_dir }}/helm-v3.16.4.tar.gz"
 
-    - name: Unarchive Helm tar
-      ansible.builtin.unarchive:
-        src: "{{ k8s_working_dir }}/helm-v3.16.4.tar.gz"
-        dest: "{{ k8s_working_dir }}/helm_dir"
+     - name: Unarchive Helm tar
+       ansible.builtin.unarchive:
+         src: "{{ k8s_working_dir }}/helm-v3.16.4.tar.gz"
+         dest: "{{ k8s_working_dir }}/helm_dir"
 
-    - name: Move binary to PATH
-      copy:
-        src: "/ruta/origen/archivo.txt"
-        dest: "/ruta/destino/archivo.txt"
-        force: yes
-      become: True
+     - name: Move binary to PATH
+       copy:
+         src: "/ruta/origen/archivo.txt"
+         dest: "/ruta/destino/archivo.txt"
+         force: yes
+       become: True
     
 
     
