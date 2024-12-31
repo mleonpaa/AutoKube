@@ -321,15 +321,15 @@
       when: kube_join_check.stat.exists == false and ansible_facts.services["kubelet.service"].state == "stopped"
       
 
- - name: Final Steps
-   hosts: control
-   vars_files:
-     - k8s_vars.yaml
-     - k8s_dinamic_vars.json
+- name: Final Steps
+  hosts: control
+  vars_files:
+    - k8s_vars.yaml
+    - k8s_dinamic_vars.json
     
-   tasks:
-     - name: Set Pods network
-       command: "kubectl apply -f {{ cni_url }}"
+  tasks:
+    - name: Set Pods network
+      command: "kubectl apply -f {{ cni_url }}"
 
     # - name: Curl Helm binary tar
      #  get_url:
