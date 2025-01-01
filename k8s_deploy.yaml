@@ -214,12 +214,6 @@
           shell: "{ echo {{ bin_bash | quote }}; sudo kubeadm init --apiserver-cert-extra-sans {{ lb_address_pub }} --control-plane-endpoint {{ control_plane_end_point }} --upload-certs 2>&1 | tee {{ k8s_working_dir }}/AutoKube/.log/kubeadm.log | grep -e {{ search.one | quote }} -e {{ search.two }} -e {{ search.three }} | head -n 3; } > {{ k8s_working_dir }}/AutoKube/kube-join.sh"
           register: kubeadm_check
 
-        - name: Set cluster access point to public DNS
-          lineinfile:
-            path: "/etc/kubernetes/admin.conf"
-            search_string: "server"
-            line: "    server: https://{{ lb_address_pub }}:6443"
-
         - name: Copy admin.conf file to administrator
           fetch:
             src: "/etc/kubernetes/admin.conf"
@@ -330,6 +324,18 @@
   tasks:
     - name: Set Pods network
       command: "kubectl apply -f {{ cni_url }}"
+
+    - name: Copy kubeconfig to temporary directory
+      copy:
+        src: "{{ k8s_working_dir }}/.kube/config"
+        dest: "/tmp/AutoKube/kubeconfig"
+        remote_src: True
+
+    - name: Set cluster access point to public DNS
+      lineinfile:
+        path: "/tmp/AutoKube/kubeconfig"
+        search_string: "server"
+        line: "    server: https://{{ lb_address_pub }}:6443"
 
     - name: Curl Helm binary tar
       get_url:
