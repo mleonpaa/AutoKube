@@ -22,6 +22,13 @@
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
 
+    - name: Create Helm directory
+      file:
+        path: "{{ k8s_working_dir }}/.helm"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
     - name: Install required packages
       apt:
         name: "{{ admin_pkges }}"
@@ -71,6 +78,26 @@
         name: "kubectl"
         state: latest
         update_cache: true
+
+    - name: Curl Helm binary tar
+      get_url:
+        url: "https://get.helm.sh/helm-v3.16.4-linux-arm64.tar.gz"
+        dest: "{{ k8s_working_dir }}/.helm/helm-v3.16.4.tar.gz"
+
+    - name: Unarchive Helm tar
+      unarchive:
+        src: "{{ k8s_working_dir }}/.helm/helm-v3.16.4.tar.gz"
+        dest: "{{ k8s_working_dir }}/.helm"
+
+    - name: Move binary to PATH
+      copy:
+        src: "{{ k8s_working_dir }}/.helm/linux-arm64/helm"
+        dest: "/usr/local/bin/"
+        force: yes
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: 755
+      become: True
 
   
 - name: Set up Deployment Environmet
@@ -322,9 +349,6 @@
     - k8s_dinamic_vars.json
     
   tasks:
-    #- name: Set Pods network
-     # command: "kubectl apply -f {{ cni_url }}"
-
     - name: Copy kubeconfig to temporary directory
       copy:
         src: "{{ k8s_working_dir }}/.kube/config"
@@ -337,25 +361,22 @@
         search_string: "server"
         line: "    server: https://{{ lb_address_pub }}:6443"
 
-    - name: Curl Helm binary tar
-      get_url:
-        url: "https://get.helm.sh/helm-v3.16.4-linux-arm64.tar.gz"
-        dest: "{{ k8s_working_dir }}/helm-v3.16.4.tar.gz"
+    - name: Set Pods network
+      command: "kubectl apply -f {{ cni_url }}"
 
-    - name: Unarchive Helm tar
-      unarchive:
-        src: "{{ k8s_working_dir }}/helm-v3.16.4.tar.gz"
-        dest: "{{ k8s_working_dir }}"
+    - name: Set Kubernetes Dashboard
+      block:
+        - name: Add kubernetes-dasboard helm repository
+          kubernetes.core.helm_repository:
+            name: kubernetes-dashboard
+            repo_url: https://kubernetes.github.io/dashboard/
 
-    - name: Move binary to PATH
-      copy:
-        src: "{{ k8s_working_dir }}/linux-arm64/helm"
-        dest: "/usr/local/bin/"
-        force: yes
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
-        mode: 755
-      become: True
+        - name: Install Kubernetes Dashboard
+          kubernetes.core.helm:
+            name: kubernetes-dashboard
+            chart_ref: kubernetes-dashboard/kubernetes-dashboard
+            namespace: kubernetes-dashboard
+            create_namespace: true
     
 
     
