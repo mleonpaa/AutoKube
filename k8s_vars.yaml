@@ -47,4 +47,4 @@ ports:
     - 10250
     - 10256
 
-cni_url: "https://docs.projectcalico.org/manifests/calico.yaml"
+cni_url: "https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml"
