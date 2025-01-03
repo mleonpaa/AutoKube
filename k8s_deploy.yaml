@@ -322,8 +322,8 @@
     - k8s_dinamic_vars.json
     
   tasks:
-    - name: Set Pods network
-      command: "kubectl apply -f {{ cni_url }}"
+    #- name: Set Pods network
+     # command: "kubectl apply -f {{ cni_url }}"
 
     - name: Copy kubeconfig to temporary directory
       copy:
