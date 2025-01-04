@@ -365,10 +365,10 @@
       command: "kubectl apply -f {{ cni_url }}"
 
     - name: Create admin-user
-      command: "kubectl apply -f {{ k8s_working_dir }}/AutoKube/.kubernetes/ServiceAccount.yaml
+      command: "kubectl apply -f {{ k8s_working_dir }}/AutoKube/.kubernetes/ServiceAccount.yaml"
 
     - name: Bind admin-user to Role
-      command: "kubectl apply -f {{ k8s_working_dir }}/AutoKube/.kubernetes/ClusterRoleBinding.yaml
+      command: "kubectl apply -f {{ k8s_working_dir }}/AutoKube/.kubernetes/ClusterRoleBinding.yaml"
 
     - name: Set Kubernetes Dashboard
       block:
