@@ -364,6 +364,12 @@
     - name: Set Pods network
       command: "kubectl apply -f {{ cni_url }}"
 
+    - name: Create admin-user
+      command: "kubectl apply -f {{ k8s_working_dir }}/AutoKube/.kubernetes/ServiceAccount.yaml
+
+    - name: Create admin-user
+      command: "kubectl apply -f {{ k8s_working_dir }}/AutoKube/.kubernetes/ClusterRoleBinding.yaml
+
     - name: Set Kubernetes Dashboard
       block:
         - name: Add kubernetes-dasboard helm repository
