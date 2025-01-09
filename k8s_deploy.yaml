@@ -15,19 +15,20 @@
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
 
-    - name: Create temporary file directory
+    - name: Create AutoKube temporary directory
       file:
         path: "/tmp/AutoKube"
         state: directory
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
 
-    - name: Create Helm directory
+    - name: Create Helm & Velero temporary directory
       file:
-        path: "{{ k8s_working_dir }}/.helm"
+        path: "/tmp/{{ item.key }}"
         state: directory
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
+      loop: "{{ binaries | dict2items }}"
 
     - name: Install required packages
       apt:
@@ -79,25 +80,28 @@
         state: latest
         update_cache: true
 
-    - name: Curl Helm binary tar
+    - name: Curl Helm and Velero binaries tar
       get_url:
-        url: "https://get.helm.sh/helm-v3.16.4-linux-arm64.tar.gz"
-        dest: "{{ k8s_working_dir }}/.helm/helm-v3.16.4.tar.gz"
+        url: "{{ item.value.tar_url }}"
+        dest: "/tmp/{{ item.value.tmp_path }}"
+      loop: "{{ binaries | dict2items }}"
 
     - name: Unarchive Helm tar
       unarchive:
-        src: "{{ k8s_working_dir }}/.helm/helm-v3.16.4.tar.gz"
-        dest: "{{ k8s_working_dir }}/.helm"
+        src: "/tmp/{{ item.value.tmp_path }}"
+        dest: "/tmp/{{ item.key }}"
+      loop: "{{ binaries | dict2items }}"
 
-    - name: Move binary to PATH
+    - name: Move binaries to PATH
       copy:
-        src: "{{ k8s_working_dir }}/.helm/linux-arm64/helm"
+        src: "/tmp/{{ item.value.bin_path }}"
         dest: "/usr/local/bin/"
         force: yes
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         mode: 755
       become: True
+      loop: "{{ binaries | dict2items }}"
 
   
 - name: Set up Deployment Environmet
@@ -362,13 +366,21 @@
         line: "    server: https://{{ lb_address_pub }}:6443"
 
     - name: Set Pods network
-      command: "kubectl apply -f {{ cni_url }}"
+      kubernetes.core.k8s:                                                                                                                                                                                                             
+        src: https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+        apply: True
 
-    - name: Create admin-user
-      command: "kubectl apply -f {{ k8s_working_dir }}/AutoKube/.kubernetes/ServiceAccount.yaml"
-
-    - name: Bind admin-user to Role
-      command: "kubectl apply -f {{ k8s_working_dir }}/AutoKube/.kubernetes/ClusterRoleBinding.yaml"
+    - name: User administration
+      block:
+        - name: Create admin-user
+          kubernetes.core.k8s:                                                                                                                                                                                                             
+            src: "{{ k8s_working_dir }}/AutoKube/.kubernetes/ServiceAccount.yaml"
+            apply: True
+      
+        - name: Bind admin-user to Role
+          kubernetes.core.k8s:                                                                                                                                                                                                             
+            src: "{{ k8s_working_dir }}/AutoKube/.kubernetes/ClusterRoleBinding.yaml"
+            apply: True
 
     - name: Set Kubernetes Dashboard
       block:
@@ -383,7 +395,6 @@
             chart_ref: kubernetes-dashboard/kubernetes-dashboard
             namespace: kubernetes-dashboard
             create_namespace: true
-    
 
     
         
