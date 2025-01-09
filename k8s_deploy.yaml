@@ -370,18 +370,6 @@
         src: https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
         apply: True
 
-    - name: User administration
-      block:
-        - name: Create admin-user
-          kubernetes.core.k8s:                                                                                                                                                                                                             
-            src: "{{ k8s_working_dir }}/AutoKube/.kubernetes/ServiceAccount.yaml"
-            apply: True
-      
-        - name: Bind admin-user to Role
-          kubernetes.core.k8s:                                                                                                                                                                                                             
-            src: "{{ k8s_working_dir }}/AutoKube/.kubernetes/ClusterRoleBinding.yaml"
-            apply: True
-
     - name: Set Kubernetes Dashboard
       block:
         - name: Add kubernetes-dasboard helm repository
@@ -395,6 +383,18 @@
             chart_ref: kubernetes-dashboard/kubernetes-dashboard
             namespace: kubernetes-dashboard
             create_namespace: true
+
+    - name: User administration
+      block:
+        - name: Create admin-user
+          kubernetes.core.k8s:                                                                                                                                                                                                             
+            src: "{{ k8s_working_dir }}/AutoKube/.kubernetes/ServiceAccount.yaml"
+            apply: True
+      
+        - name: Bind admin-user to Role
+          kubernetes.core.k8s:                                                                                                                                                                                                             
+            src: "{{ k8s_working_dir }}/AutoKube/.kubernetes/ClusterRoleBinding.yaml"
+            apply: True
 
     
         
