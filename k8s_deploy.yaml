@@ -366,7 +366,7 @@
         line: "    server: https://{{ lb_address_pub }}:6443"
 
     - name: Set Pods network
-      kubernetes.core.k8s:                                                                                                                                                                                                             
+      k8s:                                                                                                                                                                                                             
         src: https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
         apply: True
 
@@ -387,14 +387,68 @@
     - name: User administration
       block:
         - name: Create admin-user
-          kubernetes.core.k8s:                                                                                                                                                                                                             
+          k8s:                                                                                                                                                                                                             
             src: "{{ k8s_working_dir }}/AutoKube/.kubernetes/ServiceAccount.yaml"
             apply: True
       
         - name: Bind admin-user to Role
-          kubernetes.core.k8s:                                                                                                                                                                                                             
+          k8s:                                                                                                                                                                                                             
             src: "{{ k8s_working_dir }}/AutoKube/.kubernetes/ClusterRoleBinding.yaml"
             apply: True
 
-    
+    - name: Velero
+      block:
+        - name: Check if the credentials file exists
+          stat:
+            path: "{{ k8s_working_dir }}/velero_credentials.txt"
+          register: velero_creds_check
+        
+        - name: Fail if the credentials file does not exist
+          fail:
+            msg: "The velero credentials file is does nos exist"
+          when: velero_creds_check.stat.exists == false
+  
+        - name: Check if velero exists
+          kubernetes.core.k8s_info:
+            api_version: v1
+            kind: Deployment
+            name: velero
+            namespace: velero
+          register: velero_check
+  
+        - name: Set up velero
+          block:
+            - name: Install velero
+              command: velero install --provider aws --plugins velero/velero-plugin-for-aws:v1.11.0 --bucket autokube-bucket --backup-location-config region=eu-west-3 --snapshot-location-config region=eu-west-3 --secret-file {{ k8s_working_dir }}/velero_credentials.txt --kubeconfig={{ k8s_working_dir }}/.kube/config 
+  
+            - name: Wait until velero is up
+              kubernetes.core.k8s_info:
+                api_version: v1
+                kind: Deployment
+                name: velero
+                namespace: velero
+              register: velero_facts
+              until: >
+                velero_facts.resources[0].status.readyReplicas is defined and
+                velero_facts.resources[0].status.readyReplicas == velero_facts.resources[0].status.replicas
+              retries: 30  
+              delay: 5 
+  
+          when: velero_check.resources | length == 0
+
+        - name: Rescue
+          block:
+            - name: Check if backup exists
+              command: "velero describe backup {{ backup_name }}"
+              ignore_errors: True
+              register: back_facts
+              until: back_facts.failed == false
+              retries: 30          
+              delay: 5 
+      
+            - name: Rescue Backup
+              command: "velero restore create {{ backup_name }} --from-backup {{ backup_name }}"
+              when: back_facts.failed == false
+
+      when: backup == true
         
