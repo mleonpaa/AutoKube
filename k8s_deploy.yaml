@@ -426,7 +426,7 @@
         - name: Set up velero
           block:
             - name: Install velero
-              command: velero install --provider aws --plugins velero/velero-plugin-for-aws:v1.11.0 --bucket autokube-bucket --backup-location-config region={{ region }} --snapshot-location-config region={{ region }} --secret-file {{ k8s_working_dir }}/velero_credentials.txt --kubeconfig={{ k8s_working_dir }}/.kube/config 
+              command: velero install --provider aws --plugins velero/velero-plugin-for-aws:v1.11.0 --bucket kap-bucket --backup-location-config region={{ region }} --snapshot-location-config region={{ region }} --secret-file {{ k8s_working_dir }}/velero_credentials.txt --kubeconfig={{ k8s_working_dir }}/.kube/config 
   
             - name: Wait until velero is up
               kubernetes.core.k8s_info:
